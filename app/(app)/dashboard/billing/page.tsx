@@ -6,12 +6,15 @@ import {
   CREDITS_PER_RENDER,
   PLAN_ORDER,
   PLANS,
+  REFERRAL_BONUS_CREDITS,
   getPlan,
 } from "@/lib/plans";
+import { env } from "@/lib/env";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { IconBolt, IconCheck } from "@/components/ui/icons";
 import { ManageBillingButton } from "@/components/app/ManageBillingButton";
+import { ReferralCard } from "@/components/app/ReferralCard";
 import { PricingCards } from "@/components/marketing/PricingCards";
 
 export const metadata: Metadata = { title: "Billing" };
@@ -29,6 +32,7 @@ export default async function BillingPage({
   const showSuccess = Boolean(sp.upgraded || sp.success);
   const periodEnd = user.subscription?.currentPeriodEnd;
   const plans = PLAN_ORDER.map((id) => PLANS[id]);
+  const inviteUrl = `${env.APP_URL}/signup?ref=${user.referralCode}`;
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -123,6 +127,11 @@ export default async function BillingPage({
             cycle.
           </p>
         </div>
+      </section>
+
+      {/* Referral / viral loop */}
+      <section aria-label="Referrals" className="mt-6">
+        <ReferralCard inviteUrl={inviteUrl} bonus={REFERRAL_BONUS_CREDITS} />
       </section>
 
       {/* Upgrade grid */}

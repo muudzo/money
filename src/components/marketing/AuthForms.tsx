@@ -10,7 +10,8 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
-import { IconAlert, IconSparkles } from "@/components/ui/icons";
+import { IconAlert, IconGift, IconSparkles } from "@/components/ui/icons";
+import { REFERRAL_BONUS_CREDITS } from "@/lib/plans";
 
 function SubmitButton({ label, pendingLabel }: { label: string; pendingLabel: string }) {
   const { pending } = useFormStatus();
@@ -65,11 +66,30 @@ export function LoginForm() {
   );
 }
 
-export function SignupForm({ planName }: { planName?: string }) {
+export function SignupForm({
+  planName,
+  referralCode,
+}: {
+  planName?: string;
+  referralCode?: string;
+}) {
   const [state, formAction] = useActionState(signupAction, initialAuthState);
 
   return (
     <form action={formAction} className="flex flex-col gap-5" noValidate>
+      {referralCode && <input type="hidden" name="ref" value={referralCode} />}
+      {referralCode && (
+        <p className="flex items-center gap-2.5 rounded-lg border border-success/30 bg-[oklch(from_var(--success)_l_c_h_/_0.08)] px-3.5 py-3 text-sm text-success">
+          <IconGift className="size-4 shrink-0" />
+          <span>
+            Invite applied — you&apos;ll get{" "}
+            <strong className="font-semibold">
+              +{REFERRAL_BONUS_CREDITS} bonus credits
+            </strong>{" "}
+            on top of your free renders.
+          </span>
+        </p>
+      )}
       {planName && (
         <p className="flex items-center gap-2.5 rounded-lg border border-border bg-accent-soft px-3.5 py-3 text-sm text-accent">
           <IconSparkles className="size-4 shrink-0" />

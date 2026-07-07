@@ -34,6 +34,7 @@ const signupSchema = z.object({
   name: z.string().trim().max(80).optional(),
   email: z.string().email("Enter a valid email address."),
   password: z.string().min(8, "Password must be at least 8 characters."),
+  ref: z.string().trim().max(32).optional(),
 });
 
 const loginSchema = z.object({
@@ -55,6 +56,7 @@ export async function signupAction(
     name: formData.get("name") || undefined,
     email: formData.get("email"),
     password: formData.get("password"),
+    ref: formData.get("ref") || undefined,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid details." };
@@ -64,6 +66,7 @@ export async function signupAction(
       parsed.data.email,
       parsed.data.password,
       parsed.data.name,
+      parsed.data.ref,
     );
     await createSession({ userId: user.id, email: user.email });
   } catch (err) {

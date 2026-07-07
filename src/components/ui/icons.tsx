@@ -31,6 +31,17 @@ export function IconSparkles(props: IconProps) {
   );
 }
 
+export function IconGift(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M20 12v8a1 1 0 01-1 1H5a1 1 0 01-1-1v-8" />
+      <path d="M2.5 8.5h19V12h-19z" />
+      <path d="M12 8.5V21" />
+      <path d="M12 8.5S10.5 3.5 7.5 4.5 9 8.5 12 8.5zM12 8.5s1.5-5 4.5-4-1.5 4-4.5 4z" />
+    </Svg>
+  );
+}
+
 export function IconPlay(props: IconProps) {
   return (
     <Svg {...props}>

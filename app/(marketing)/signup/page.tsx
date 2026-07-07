@@ -13,11 +13,12 @@ export const metadata: Metadata = {
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ plan?: string }>;
+  searchParams: Promise<{ plan?: string; ref?: string }>;
 }) {
-  const { plan } = await searchParams;
+  const { plan, ref } = await searchParams;
   const selectedPlan =
     plan && plan in PLANS && plan !== "free" ? PLANS[plan as PlanId] : null;
+  const referralCode = ref?.trim() || undefined;
 
   return (
     <AuthShell
@@ -35,7 +36,7 @@ export default async function SignupPage({
         </>
       }
     >
-      <SignupForm planName={selectedPlan?.name} />
+      <SignupForm planName={selectedPlan?.name} referralCode={referralCode} />
     </AuthShell>
   );
 }
