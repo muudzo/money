@@ -103,6 +103,40 @@ MP4 to `storage/renders/<jobId>/`, and marks it `done` (or `failed`, which refun
 The UI polls `/api/jobs/<id>` for live progress; finished videos stream from `/api/media/*`
 with per-user ownership checks and HTTP Range support.
 
+## Security & abuse hardening
+
+Free-credit tools get hammered by bots and credit farmers, so the abuse surface
+is defended in depth:
+
+- **Rate limiting** (`src/lib/rate-limit.ts`) — signup (5/15min per IP), login
+  (10/15min per IP + a 5/15min per-email lockout), and render enqueue (12/min
+  per user). In-memory for single-node launch; drop-in Redis/Upstash for scale.
+- **Timing-safe auth** — login runs bcrypt even for unknown emails, so response
+  time can't be used to enumerate accounts.
+- **Concurrency cap** — each plan limits in-flight renders (free 1 → scale 5) so
+  one account can't monopolize the shared worker.
+- **Webhook idempotency** — a `WebhookEvent` ledger keyed by Stripe event id
+  makes retried deliveries a no-op instead of double-granting credits.
+- **Nonce-based CSP + HSTS** (`middleware.ts`) — strict `script-src` with a
+  per-request nonce (no `'unsafe-inline'`), plus COOP, `X-Frame-Options`, and a
+  locked-down `Permissions-Policy`.
+- **Password policy** (`src/lib/password.ts`) — length-first (min 10) with a
+  common-password blocklist, NIST 800-63B style.
+- **Input validation** — every server action validates with Zod at the boundary;
+  media is served with per-user ownership checks and path-traversal guards.
+
+## Growth & monetization mechanics
+
+- **Annual billing** — every plan has a yearly price (2 months free);
+  `checkoutAction(planId, interval)` and the Stripe provider pick the right
+  price id, falling back to monthly if an annual price isn't configured.
+- **Referral loop** (`src/lib/referral.ts`) — every user gets a shareable code;
+  signing up via `/signup?ref=CODE` grants **both** parties bonus credits. The
+  invite link + copy button live on the billing page.
+- **Credit gating & upsell** — running out of credits or hitting the concurrency
+  cap returns typed codes (`NO_CREDITS`, `TOO_MANY_ACTIVE`) the UI turns into
+  upgrade nudges.
+
 ## Production notes
 
 - **Database:** swap `DATABASE_URL` for Postgres and change the Prisma `provider` — no app
