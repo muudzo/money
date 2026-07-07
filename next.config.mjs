@@ -1,6 +1,14 @@
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Pin the file-tracing root to this project. Without it, Next can infer the
+  // wrong workspace root when an unrelated lockfile exists higher up the tree.
+  outputFileTracingRoot: projectRoot,
   // Rendered videos/thumbnails are served from /storage via a route handler,
   // so we keep the build output lean and don't try to statically optimize them.
   serverExternalPackages: ["@prisma/client", "bcryptjs"],

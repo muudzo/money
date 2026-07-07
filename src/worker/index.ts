@@ -93,3 +93,9 @@ main().catch((err) => {
   console.error("[worker] fatal error:", err);
   process.exit(1);
 });
+
+// Marks this standalone entry script as a module so its top-level `main`
+// doesn't collide with other entry scripts under the same TS program. It has
+// no runtime effect and is not a static import, so the env-loading order above
+// is unaffected.
+export {};
