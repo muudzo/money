@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getBalance } from "@/lib/credits";
+import { db } from "@/lib/db";
 import {
   CREDITS_PER_RENDER,
   PLAN_ORDER,
@@ -19,6 +20,23 @@ import { PricingCards } from "@/components/marketing/PricingCards";
 
 export const metadata: Metadata = { title: "Billing" };
 
+/** Human labels for ledger reasons (append-only CreditLedger.reason values). */
+const LEDGER_LABELS: Record<string, string> = {
+  signup_bonus: "Signup bonus",
+  referral_bonus: "Referral bonus",
+  plan_grant: "Plan credits",
+  render_debit: "Ad render",
+  render_refund: "Refund — failed render",
+  pack_purchase: "Credit pack",
+};
+
+/** Tabular delta styling: grants green, debits default. */
+function cnDelta(delta: number): string {
+  return delta > 0
+    ? "font-semibold tabular-nums text-success"
+    : "font-semibold tabular-nums text-fg";
+}
+
 export default async function BillingPage({
   searchParams,
 }: {
@@ -27,7 +45,15 @@ export default async function BillingPage({
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const [credits, sp] = await Promise.all([getBalance(user.id), searchParams]);
+  const [credits, sp, ledger] = await Promise.all([
+    getBalance(user.id),
+    searchParams,
+    db.creditLedger.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    }),
+  ]);
   const plan = getPlan(user.subscription?.plan);
   const showSuccess = Boolean(sp.upgraded || sp.success);
   const periodEnd = user.subscription?.currentPeriodEnd;
@@ -132,6 +158,47 @@ export default async function BillingPage({
       {/* Referral / viral loop */}
       <section aria-label="Referrals" className="mt-6">
         <ReferralCard inviteUrl={inviteUrl} bonus={REFERRAL_BONUS_CREDITS} />
+      </section>
+
+      {/* Credit activity — the append-only ledger, made legible */}
+      <section aria-labelledby="activity-heading" className="mt-6">
+        <div className="surface-card p-7">
+          <h2
+            id="activity-heading"
+            className="text-xs font-semibold uppercase tracking-[0.14em] text-subtle"
+          >
+            Credit activity
+          </h2>
+          {ledger.length === 0 ? (
+            <p className="mt-4 text-sm text-muted">No credit activity yet.</p>
+          ) : (
+            <ul className="mt-4 divide-y divide-border">
+              {ledger.map((entry) => (
+                <li
+                  key={entry.id}
+                  className="flex items-center justify-between gap-4 py-2.5 text-sm"
+                >
+                  <span className="text-muted">
+                    {LEDGER_LABELS[entry.reason] ?? entry.reason}
+                  </span>
+                  <span className="flex items-center gap-4">
+                    <time
+                      dateTime={entry.createdAt.toISOString()}
+                      className="hidden text-xs text-subtle sm:block"
+                    >
+                      {formatDate(entry.createdAt)}
+                    </time>
+                    <span
+                      className={cnDelta(entry.delta)}
+                    >
+                      {entry.delta > 0 ? `+${entry.delta}` : entry.delta}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </section>
 
       {/* Upgrade grid */}
