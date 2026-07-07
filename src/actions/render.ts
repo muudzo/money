@@ -3,7 +3,11 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireUser, AuthError } from "@/lib/auth";
-import { enqueueRender, type StartRenderInput } from "@/lib/jobs";
+import {
+  enqueueRender,
+  TooManyActiveJobsError,
+  type StartRenderInput,
+} from "@/lib/jobs";
 import { InsufficientCreditsError } from "@/lib/credits";
 import { checkRateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 
@@ -12,7 +16,7 @@ export type StartRenderResult =
   | {
       ok: false;
       error: string;
-      code?: "NO_CREDITS" | "UNAUTHORIZED" | "RATE_LIMITED";
+      code?: "NO_CREDITS" | "UNAUTHORIZED" | "RATE_LIMITED" | "TOO_MANY_ACTIVE";
     };
 
 // Enqueues are cheap but each reserves a credit and a worker slot. Cap the
@@ -76,6 +80,13 @@ export async function startRenderAction(
         ok: false,
         code: "NO_CREDITS",
         error: "You're out of render credits. Upgrade your plan to keep creating.",
+      };
+    }
+    if (err instanceof TooManyActiveJobsError) {
+      return {
+        ok: false,
+        code: "TOO_MANY_ACTIVE",
+        error: `You already have ${err.limit} render${err.limit === 1 ? "" : "s"} in progress. Wait for one to finish, or upgrade for more concurrency.`,
       };
     }
     return { ok: false, error: "Could not start the render. Please try again." };

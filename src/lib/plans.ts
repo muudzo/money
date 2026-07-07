@@ -17,6 +17,9 @@ export interface Plan {
   watermark: boolean;
   seats: number;
   priority: boolean;
+  /** Max renders a user on this plan may have in-flight (queued+rendering) at
+   * once. Protects the shared worker from being monopolized by one account. */
+  maxConcurrentRenders: number;
   highlight: boolean;
   tagline: string;
   features: string[];
@@ -37,6 +40,7 @@ export const PLANS: Record<PlanId, Plan> = {
     watermark: true,
     seats: 1,
     priority: false,
+    maxConcurrentRenders: 1,
     highlight: false,
     tagline: "Kick the tires. 3 render credits on signup.",
     features: [
@@ -55,6 +59,7 @@ export const PLANS: Record<PlanId, Plan> = {
     watermark: false,
     seats: 1,
     priority: false,
+    maxConcurrentRenders: 2,
     highlight: false,
     tagline: "For solo founders shipping ads every week.",
     features: [
@@ -75,6 +80,7 @@ export const PLANS: Record<PlanId, Plan> = {
     watermark: false,
     seats: 3,
     priority: false,
+    maxConcurrentRenders: 3,
     highlight: true,
     tagline: "For brands running always-on creative testing.",
     features: [
@@ -96,6 +102,7 @@ export const PLANS: Record<PlanId, Plan> = {
     watermark: false,
     seats: 10,
     priority: true,
+    maxConcurrentRenders: 5,
     highlight: false,
     tagline: "For agencies producing at volume.",
     features: [

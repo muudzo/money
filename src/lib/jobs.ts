@@ -40,6 +40,14 @@ export interface CompletedAsset {
   sizeBytes?: number;
 }
 
+/** Thrown when a user already has their plan's max renders in flight. */
+export class TooManyActiveJobsError extends Error {
+  constructor(public readonly limit: number) {
+    super(`Too many active renders (limit ${limit}).`);
+    this.name = "TooManyActiveJobsError";
+  }
+}
+
 const RESOLUTIONS = {
   "720p": { width: 720, height: 1280 },
   "1080p": { width: 1080, height: 1920 },
@@ -57,6 +65,13 @@ export async function enqueueRender(
 ) {
   const plan = getPlan(planId);
   const res = RESOLUTIONS[plan.maxResolution];
+
+  // Fair-use gate: cap in-flight renders per user so one account can't
+  // monopolize the shared worker. Checked before we create/charge anything.
+  const active = await countActiveJobs(userId);
+  if (active >= plan.maxConcurrentRenders) {
+    throw new TooManyActiveJobsError(plan.maxConcurrentRenders);
+  }
 
   const project = await db.project.create({
     data: {
