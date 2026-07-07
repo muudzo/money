@@ -1,0 +1,125 @@
+// AdReel data model. SQLite for local/free; swap `provider`/DATABASE_URL for
+// Postgres in production without touching application code.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  subscription  Subscription?
+  creditEntries CreditLedger[]
+  projects      Project[]
+  renderJobs    RenderJob[]
+}
+
+model Subscription {
+  id               String    @id @default(cuid())
+  userId           String    @unique
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan             String    @default("free") // free | starter | growth | scale
+  status           String    @default("active") // active | canceled | past_due
+  stripeCustomerId String?
+  stripeSubId      String?
+  currentPeriodEnd DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+/// Append-only credit ledger. A user's balance is the SUM of all deltas.
+model CreditLedger {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  delta     Int // positive = grant, negative = debit
+  reason    String // signup_bonus | plan_grant | render_debit | render_refund | pack_purchase
+  jobId     String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Avatar {
+  id        String   @id @default(cuid())
+  name      String
+  imagePath String // relative to assets/avatars
+  voice     String // system voice name passed to the TTS provider
+  gender    String?
+  tone      String? // energetic | calm | authoritative | friendly
+  accent    String?
+  createdAt DateTime @default(now())
+
+  projects Project[]
+  jobs     RenderJob[]
+}
+
+model Project {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  brand     String
+  product   String
+  audience  String?
+  tone      String   @default("energetic")
+  script    String? // generated or user-edited script text
+  avatarId  String?
+  avatar    Avatar?  @relation(fields: [avatarId], references: [id])
+  aspect    String   @default("9:16")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  jobs RenderJob[]
+
+  @@index([userId])
+}
+
+model RenderJob {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId  String
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  avatarId   String?
+  avatar     Avatar?   @relation(fields: [avatarId], references: [id])
+  status     String    @default("queued") // queued | rendering | done | failed
+  progress   Int       @default(0) // 0..100
+  stage      String? // script | tts | captions | compose
+  cost       Int       @default(1) // credits held for this render
+  error      String?
+  scriptText String?
+  config     String? // JSON snapshot of render config
+  startedAt  DateTime?
+  finishedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  asset Asset?
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Asset {
+  id         String    @id @default(cuid())
+  jobId      String    @unique
+  job        RenderJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  videoPath  String // relative to storage/
+  thumbPath  String?
+  width      Int
+  height     Int
+  durationMs Int
+  sizeBytes  Int?
+  createdAt  DateTime  @default(now())
+}

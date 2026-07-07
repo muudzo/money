@@ -1,0 +1,267 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────
+   AdReel design tokens.
+   Direction: premium "creative studio" — deep ink surfaces, an
+   electric violet→cyan accent, editorial scale contrast. Theme-aware:
+   light + dark both intentional; system preference respected, and the
+   in-app toggle stamps [data-theme] which always wins.
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  --bg: oklch(98.5% 0.004 265);
+  --surface: oklch(100% 0 0);
+  --surface-2: oklch(96.5% 0.006 265);
+  --surface-3: oklch(93.5% 0.008 265);
+  --border: oklch(90% 0.008 265);
+  --border-strong: oklch(84% 0.01 265);
+  --fg: oklch(21% 0.02 270);
+  --fg-muted: oklch(46% 0.018 265);
+  --fg-subtle: oklch(60% 0.015 265);
+
+  --accent: oklch(56% 0.21 280);
+  --accent-hover: oklch(50% 0.21 280);
+  --accent-fg: oklch(99% 0 0);
+  --accent-2: oklch(70% 0.15 210);
+  --accent-soft: oklch(94% 0.05 280);
+
+  --success: oklch(62% 0.16 150);
+  --warning: oklch(72% 0.16 70);
+  --danger: oklch(58% 0.22 25);
+
+  --radius-sm: 0.5rem;
+  --radius: 0.85rem;
+  --radius-lg: 1.35rem;
+  --radius-xl: 2rem;
+
+  --shadow-sm: 0 1px 2px oklch(20% 0.02 270 / 0.06);
+  --shadow: 0 4px 20px -4px oklch(20% 0.02 270 / 0.12);
+  --shadow-lg: 0 24px 60px -12px oklch(20% 0.03 270 / 0.28);
+  --shadow-glow: 0 0 0 1px oklch(56% 0.21 280 / 0.35),
+    0 12px 40px -8px oklch(56% 0.21 280 / 0.35);
+
+  --text-hero: clamp(2.75rem, 1rem + 7vw, 6.5rem);
+  --text-display: clamp(2rem, 1rem + 4vw, 3.75rem);
+  --text-title: clamp(1.4rem, 1rem + 1.6vw, 2rem);
+  --text-base: clamp(1rem, 0.96rem + 0.2vw, 1.075rem);
+
+  --space-section: clamp(4rem, 3rem + 6vw, 9rem);
+
+  --duration-fast: 140ms;
+  --duration: 260ms;
+  --duration-slow: 520ms;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display), var(--font-inter), ui-sans-serif, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: oklch(16% 0.015 275);
+    --surface: oklch(20% 0.02 275);
+    --surface-2: oklch(24% 0.024 275);
+    --surface-3: oklch(28% 0.028 275);
+    --border: oklch(31% 0.02 275);
+    --border-strong: oklch(40% 0.024 275);
+    --fg: oklch(96% 0.008 265);
+    --fg-muted: oklch(72% 0.02 270);
+    --fg-subtle: oklch(58% 0.02 270);
+
+    --accent: oklch(70% 0.18 285);
+    --accent-hover: oklch(76% 0.18 285);
+    --accent-fg: oklch(16% 0.02 275);
+    --accent-2: oklch(78% 0.13 205);
+    --accent-soft: oklch(30% 0.06 285);
+
+    --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.3);
+    --shadow: 0 8px 30px -6px oklch(0% 0 0 / 0.5);
+    --shadow-lg: 0 30px 70px -14px oklch(0% 0 0 / 0.65);
+    --shadow-glow: 0 0 0 1px oklch(70% 0.18 285 / 0.4),
+      0 16px 50px -10px oklch(70% 0.18 285 / 0.4);
+  }
+}
+
+/* Explicit toggle overrides always win over the system preference. */
+:root[data-theme="light"] {
+  --bg: oklch(98.5% 0.004 265);
+  --surface: oklch(100% 0 0);
+  --surface-2: oklch(96.5% 0.006 265);
+  --surface-3: oklch(93.5% 0.008 265);
+  --border: oklch(90% 0.008 265);
+  --border-strong: oklch(84% 0.01 265);
+  --fg: oklch(21% 0.02 270);
+  --fg-muted: oklch(46% 0.018 265);
+  --fg-subtle: oklch(60% 0.015 265);
+  --accent: oklch(56% 0.21 280);
+  --accent-hover: oklch(50% 0.21 280);
+  --accent-fg: oklch(99% 0 0);
+  --accent-2: oklch(70% 0.15 210);
+  --accent-soft: oklch(94% 0.05 280);
+  --shadow-sm: 0 1px 2px oklch(20% 0.02 270 / 0.06);
+  --shadow: 0 4px 20px -4px oklch(20% 0.02 270 / 0.12);
+  --shadow-lg: 0 24px 60px -12px oklch(20% 0.03 270 / 0.28);
+  --shadow-glow: 0 0 0 1px oklch(56% 0.21 280 / 0.35),
+    0 12px 40px -8px oklch(56% 0.21 280 / 0.35);
+}
+
+:root[data-theme="dark"] {
+  --bg: oklch(16% 0.015 275);
+  --surface: oklch(20% 0.02 275);
+  --surface-2: oklch(24% 0.024 275);
+  --surface-3: oklch(28% 0.028 275);
+  --border: oklch(31% 0.02 275);
+  --border-strong: oklch(40% 0.024 275);
+  --fg: oklch(96% 0.008 265);
+  --fg-muted: oklch(72% 0.02 270);
+  --fg-subtle: oklch(58% 0.02 270);
+  --accent: oklch(70% 0.18 285);
+  --accent-hover: oklch(76% 0.18 285);
+  --accent-fg: oklch(16% 0.02 275);
+  --accent-2: oklch(78% 0.13 205);
+  --accent-soft: oklch(30% 0.06 285);
+  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.3);
+  --shadow: 0 8px 30px -6px oklch(0% 0 0 / 0.5);
+  --shadow-lg: 0 30px 70px -14px oklch(0% 0 0 / 0.65);
+  --shadow-glow: 0 0 0 1px oklch(70% 0.18 285 / 0.4),
+    0 16px 50px -10px oklch(70% 0.18 285 / 0.4);
+}
+
+/* Map semantic tokens into Tailwind's theme so utilities like `bg-surface`,
+   `text-muted`, `border-border`, `rounded-lg` resolve to the switching vars. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-fg: var(--fg);
+  --color-muted: var(--fg-muted);
+  --color-subtle: var(--fg-subtle);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-2: var(--accent-2);
+  --color-accent-soft: var(--accent-soft);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  --radius-sm: var(--radius-sm);
+  --radius-DEFAULT: var(--radius);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
+
+  --ease-out-expo: var(--ease-out-expo);
+  --ease-spring: var(--ease-spring);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  min-height: 100dvh;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Reusable primitives ─────────────────────────────────────── */
+.text-gradient {
+  background: linear-gradient(
+    100deg,
+    var(--fg) 20%,
+    var(--accent) 55%,
+    var(--accent-2) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.surface-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.4;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up var(--duration-slow) var(--ease-out-expo) both;
+}
+
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
