@@ -17,7 +17,7 @@ The entire generation pipeline uses local tools — no paid AI APIs:
 |-------|--------------------|-------------------|
 | Script | **Ollama** (local LLM); deterministic template fallback | any LLM |
 | Voiceover | macOS **`say`** → mp3 (silent fallback elsewhere) | Piper / Kokoro |
-| Captions | duration-estimated word timing | Whisper (word-accurate) |
+| Captions | duration-estimated timing, burned in on ANY ffmpeg (ASS → satori PNG overlay → drawtext ladder) | Whisper (word-accurate) |
 | Avatar | still portrait + **Ken-Burns** motion via ffmpeg | GPU lip-sync (SadTalker/Wav2Lip) |
 | Compose | **ffmpeg** filtergraph → H.264 MP4 + thumbnail | — |
 
