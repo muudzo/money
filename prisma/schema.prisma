@@ -106,6 +106,7 @@ model RenderJob {
   progress   Int       @default(0) // 0..100
   stage      String? // script | tts | captions | compose
   cost       Int       @default(1) // credits held for this render
+  priority   Int       @default(0) // plan tier: higher claims first (paid = faster)
   error      String?
   scriptText String?
   config     String? // JSON snapshot of render config
@@ -117,7 +118,7 @@ model RenderJob {
   asset Asset?
 
   @@index([userId])
-  @@index([status])
+  @@index([status, priority, createdAt]) // claim path: oldest of highest priority
 }
 
 model Asset {

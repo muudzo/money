@@ -1,7 +1,7 @@
 // Shared job-queue API used by BOTH the Next app (enqueue/read) and the render
 // worker (claim/update/complete/fail). No `server-only` — the worker imports it.
 import { db } from "./db";
-import { CREDITS_PER_RENDER, getPlan } from "./plans";
+import { CREDITS_PER_RENDER, PLAN_ORDER, getPlan } from "./plans";
 import { spendCredits, refundCredits } from "./credits";
 import type { Tone } from "@/providers/types";
 
@@ -106,6 +106,9 @@ export async function enqueueRender(
       projectId: project.id,
       avatarId: input.avatarId ?? null,
       status: "queued",
+      // Paid tiers jump the queue: priority = plan tier (free 0 … scale 3).
+      // This is the "priority render queue" the paid plans advertise.
+      priority: PLAN_ORDER.indexOf(plan.id),
       cost: CREDITS_PER_RENDER,
       scriptText: input.script ?? null,
       config: JSON.stringify(config),
@@ -126,11 +129,12 @@ export async function enqueueRender(
 
 export type ClaimedJob = NonNullable<Awaited<ReturnType<typeof claimNextQueuedJob>>>;
 
-/** Atomically claim the oldest queued job. Returns null if the queue is empty. */
+/** Atomically claim the next queued job: highest plan priority first, oldest
+ * within a tier. Returns null if the queue is empty. */
 export async function claimNextQueuedJob() {
   const next = await db.renderJob.findFirst({
     where: { status: "queued" },
-    orderBy: { createdAt: "asc" },
+    orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
     select: { id: true },
   });
   if (!next) return null;

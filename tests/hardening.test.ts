@@ -95,6 +95,32 @@ describe("concurrent render cap", () => {
   });
 });
 
+describe("priority queue", () => {
+  it("claims a paid-tier job before an older free-tier job", async () => {
+    // Isolate: park any queued jobs from earlier tests so they can't win the claim.
+    await db.renderJob.updateMany({
+      where: { status: "queued" },
+      data: { status: "failed" },
+    });
+
+    const freeUser = await makeUser();
+    const scaleUser = await makeUser();
+    await credits.grantCredits(freeUser, 3, "signup_bonus");
+    await credits.grantCredits(scaleUser, 3, "plan_grant");
+
+    // Free job enqueued FIRST (older createdAt)…
+    const freeJob = await jobs.enqueueRender(freeUser, "free", baseInput("Free ad"));
+    // …then a scale job arrives.
+    const scaleJob = await jobs.enqueueRender(scaleUser, "scale", baseInput("Scale ad"));
+
+    // The worker must pick the scale job despite it being newer.
+    const first = await jobs.claimNextQueuedJob();
+    expect(first?.id).toBe(scaleJob.id);
+    const second = await jobs.claimNextQueuedJob();
+    expect(second?.id).toBe(freeJob.id);
+  });
+});
+
 describe("webhook idempotency", () => {
   it("rejects a duplicate Stripe event id", async () => {
     await db.webhookEvent.create({
