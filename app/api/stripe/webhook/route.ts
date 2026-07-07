@@ -34,6 +34,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_signature" }, { status: 400 });
   }
 
+  // Idempotency: Stripe retries deliveries, so record the event id first and
+  // bail if we've already processed it. Without this, a retried
+  // checkout.session.completed / invoice.payment_succeeded would grant credits
+  // twice — a direct revenue leak. The unique PK makes the check atomic.
+  try {
+    await db.webhookEvent.create({ data: { id: event.id, type: event.type } });
+  } catch {
+    // Unique-constraint violation ⇒ already handled. Ack so Stripe stops retrying.
+    return NextResponse.json({ received: true, duplicate: true });
+  }
+
   try {
     switch (event.type) {
       case "checkout.session.completed": {
@@ -82,6 +93,9 @@ export async function POST(req: Request) {
     }
   } catch (err) {
     console.error("[stripe webhook] handler error", err);
+    // Roll back the idempotency marker so Stripe's retry can reprocess this
+    // event instead of being deduped away as already-handled.
+    await db.webhookEvent.delete({ where: { id: event.id } }).catch(() => {});
     return NextResponse.json({ error: "handler_error" }, { status: 500 });
   }
 
