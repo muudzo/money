@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { useState } from "react";
 import { checkoutAction } from "@/actions/billing";
-import type { Plan } from "@/lib/plans";
+import {
+  annualSavings,
+  effectiveMonthly,
+  type BillingInterval,
+  type Plan,
+} from "@/lib/plans";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -25,12 +30,15 @@ export function PricingCards({
 }: PricingCardsProps) {
   const [pendingPlan, setPendingPlan] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Default to yearly — the effective-monthly anchor is the standard
+  // conversion pattern, and two months free is genuinely the better deal.
+  const [billingInterval, setBillingInterval] = useState<BillingInterval>("year");
 
   async function handleCheckout(planId: Plan["id"]) {
     setError(null);
     setPendingPlan(planId);
     try {
-      const res = await checkoutAction(planId);
+      const res = await checkoutAction(planId, billingInterval);
       if (res.url) {
         window.location.href = res.url;
         return;
@@ -44,6 +52,51 @@ export function PricingCards({
 
   return (
     <div>
+      <div className="mb-9 flex justify-center">
+        <div
+          role="group"
+          aria-label="Billing interval"
+          className="inline-flex items-center gap-1 rounded-full border border-border bg-surface p-1 shadow-[var(--shadow-sm)]"
+        >
+          <button
+            type="button"
+            aria-pressed={billingInterval === "month"}
+            onClick={() => setBillingInterval("month")}
+            className={cn(
+              "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+              billingInterval === "month"
+                ? "bg-accent text-accent-fg"
+                : "text-muted hover:text-fg",
+            )}
+          >
+            Monthly
+          </button>
+          <button
+            type="button"
+            aria-pressed={billingInterval === "year"}
+            onClick={() => setBillingInterval("year")}
+            className={cn(
+              "flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+              billingInterval === "year"
+                ? "bg-accent text-accent-fg"
+                : "text-muted hover:text-fg",
+            )}
+          >
+            Yearly
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-[0.68rem] font-semibold",
+                billingInterval === "year"
+                  ? "bg-white/20"
+                  : "bg-accent-soft text-accent",
+              )}
+            >
+              2 months free
+            </span>
+          </button>
+        </div>
+      </div>
+
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         {plans.map((plan) => {
           const isCurrent = plan.id === currentPlanId;
@@ -77,12 +130,29 @@ export function PricingCards({
                 </p>
               </header>
 
-              <p className="mt-5 flex items-baseline gap-1.5">
-                <span className="font-display text-4xl font-bold tracking-tight text-fg">
-                  {formatCurrency(plan.priceMonthly)}
-                </span>
-                <span className="text-sm text-subtle">/ month</span>
-              </p>
+              {plan.priceMonthly === 0 || billingInterval === "month" ? (
+                <p className="mt-5 flex items-baseline gap-1.5">
+                  <span className="font-display text-4xl font-bold tracking-tight text-fg">
+                    {formatCurrency(plan.priceMonthly)}
+                  </span>
+                  <span className="text-sm text-subtle">/ month</span>
+                </p>
+              ) : (
+                <div className="mt-5">
+                  <p className="flex items-baseline gap-1.5">
+                    <span className="font-display text-4xl font-bold tracking-tight text-fg">
+                      {formatCurrency(effectiveMonthly(plan))}
+                    </span>
+                    <span className="text-sm text-subtle">/ mo</span>
+                  </p>
+                  <p className="mt-1 text-xs text-subtle">
+                    {formatCurrency(plan.priceYearly)} billed yearly ·{" "}
+                    <span className="font-semibold text-success">
+                      save {formatCurrency(annualSavings(plan))}
+                    </span>
+                  </p>
+                </div>
+              )}
 
               <p className="mt-3 inline-flex items-center gap-1.5 self-start rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-accent">
                 <IconBolt className="size-3.5" />
