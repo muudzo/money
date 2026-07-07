@@ -5,10 +5,20 @@ import { revalidatePath } from "next/cache";
 import { requireUser, AuthError } from "@/lib/auth";
 import { enqueueRender, type StartRenderInput } from "@/lib/jobs";
 import { InsufficientCreditsError } from "@/lib/credits";
+import { checkRateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 
 export type StartRenderResult =
   | { ok: true; jobId: string }
-  | { ok: false; error: string; code?: "NO_CREDITS" | "UNAUTHORIZED" };
+  | {
+      ok: false;
+      error: string;
+      code?: "NO_CREDITS" | "UNAUTHORIZED" | "RATE_LIMITED";
+    };
+
+// Enqueues are cheap but each reserves a credit and a worker slot. Cap the
+// burst rate per user so a runaway client (or a compromised session) can't
+// spray the queue faster than a human ever would.
+const RENDER_BURST = { limit: 12, windowMs: 60 * 1000 };
 
 const schema = z.object({
   name: z.string().trim().min(1, "Give your ad a name.").max(100),
@@ -35,6 +45,15 @@ export async function startRenderAction(
     if (err instanceof AuthError)
       return { ok: false, error: "Please sign in to generate.", code: "UNAUTHORIZED" };
     throw err;
+  }
+
+  const burst = checkRateLimit(`render:user:${user.id}`, RENDER_BURST);
+  if (!burst.ok) {
+    return {
+      ok: false,
+      code: "RATE_LIMITED",
+      error: `You're generating very fast. Try again in ${retryAfterSeconds(burst)}s.`,
+    };
   }
 
   const parsed = schema.safeParse(input);
