@@ -121,6 +121,31 @@ describe("priority queue", () => {
   });
 });
 
+describe("stale job recovery", () => {
+  it("re-queues rendering jobs older than the threshold, leaves fresh ones", async () => {
+    const userId = await makeUser();
+    await credits.grantCredits(userId, 5, "plan_grant");
+    const stale = await jobs.enqueueRender(userId, "growth", baseInput("Stale"));
+    const fresh = await jobs.enqueueRender(userId, "growth", baseInput("Fresh"));
+
+    await db.renderJob.update({
+      where: { id: stale.id },
+      data: { status: "rendering", startedAt: new Date(Date.now() - 60 * 60 * 1000) },
+    });
+    await db.renderJob.update({
+      where: { id: fresh.id },
+      data: { status: "rendering", startedAt: new Date() },
+    });
+
+    const recovered = await jobs.requeueStaleJobs(15 * 60 * 1000);
+    expect(recovered).toBe(1);
+    const staleAfter = await db.renderJob.findUnique({ where: { id: stale.id } });
+    const freshAfter = await db.renderJob.findUnique({ where: { id: fresh.id } });
+    expect(staleAfter?.status).toBe("queued");
+    expect(freshAfter?.status).toBe("rendering");
+  });
+});
+
 describe("webhook idempotency", () => {
   it("rejects a duplicate Stripe event id", async () => {
     await db.webhookEvent.create({

@@ -41,8 +41,15 @@ function sleep(ms: number): Promise<void> {
 
 async function main() {
   const { env } = await import("@/lib/env");
-  const { claimNextQueuedJob, completeJob, failJob } = await import("@/lib/jobs");
+  const { claimNextQueuedJob, completeJob, failJob, requeueStaleJobs } =
+    await import("@/lib/jobs");
   const { renderJob } = await import("@/pipeline/render");
+
+  // Recover anything a previous worker crashed on before we start polling.
+  const recovered = await requeueStaleJobs().catch(() => 0);
+  if (recovered > 0) {
+    console.log(`[worker] re-queued ${recovered} stale job(s) from a previous run`);
+  }
 
   console.log("──────────────────────────────────────────────");
   console.log(" AdReel render worker");

@@ -129,6 +129,21 @@ export async function enqueueRender(
 
 export type ClaimedJob = NonNullable<Awaited<ReturnType<typeof claimNextQueuedJob>>>;
 
+/**
+ * Recover jobs orphaned by a crashed worker: anything still "rendering" whose
+ * startedAt is older than the threshold gets re-queued (progress reset). The
+ * user's credit stays reserved and the job simply runs again. Called by the
+ * worker at startup; safe for the single-worker topology.
+ */
+export async function requeueStaleJobs(staleAfterMs = 15 * 60 * 1000): Promise<number> {
+  const cutoff = new Date(Date.now() - staleAfterMs);
+  const res = await db.renderJob.updateMany({
+    where: { status: "rendering", startedAt: { lt: cutoff } },
+    data: { status: "queued", progress: 0, stage: null, startedAt: null },
+  });
+  return res.count;
+}
+
 /** Atomically claim the next queued job: highest plan priority first, oldest
  * within a tier. Returns null if the queue is empty. */
 export async function claimNextQueuedJob() {
