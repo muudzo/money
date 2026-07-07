@@ -7,6 +7,12 @@ import { SIGNUP_BONUS_CREDITS } from "./plans";
 
 const BCRYPT_ROUNDS = 12;
 
+// A valid throwaway hash at the same cost factor. When a login targets an email
+// that doesn't exist, we still run bcrypt against this so the response time is
+// indistinguishable from a wrong password for a real account — closing the
+// timing side channel that would otherwise let an attacker enumerate accounts.
+const DUMMY_HASH = bcrypt.hashSync("account-enumeration-guard", BCRYPT_ROUNDS);
+
 export function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, BCRYPT_ROUNDS);
 }
@@ -52,7 +58,11 @@ export async function authenticate(
   const user = await db.user.findUnique({
     where: { email: email.trim().toLowerCase() },
   });
-  if (!user) return null;
+  if (!user) {
+    // Spend the same work as a real comparison, then fail. Do NOT short-circuit.
+    await verifyPassword(password, DUMMY_HASH);
+    return null;
+  }
   const ok = await verifyPassword(password, user.passwordHash);
   return ok ? user : null;
 }
