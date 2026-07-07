@@ -39,8 +39,45 @@ export default async function PricingPage() {
   const user = await getCurrentUser();
   const plans = PLAN_ORDER.map((id) => PLANS[id]);
 
+  // Structured data for rich results, derived from the same sources of truth
+  // as the visible page (PLANS + FAQ) so it can never drift out of sync.
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Product",
+        name: "AdReel — AI UGC Ad Generator",
+        description:
+          "Generate ready-to-post vertical UGC ad videos with AI: script, voiceover, avatar and captions.",
+        brand: { "@type": "Brand", name: "AdReel" },
+        offers: plans
+          .filter((p) => p.priceMonthly > 0)
+          .map((p) => ({
+            "@type": "Offer",
+            name: `${p.name} plan`,
+            price: p.priceMonthly,
+            priceCurrency: "USD",
+            description: p.tagline,
+          })),
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: FAQ.map((f) => ({
+          "@type": "Question",
+          name: f.q,
+          acceptedAnswer: { "@type": "Answer", text: f.a },
+        })),
+      },
+    ],
+  };
+
   return (
     <main className="relative overflow-hidden">
+      <script
+        type="application/ld+json"
+        // Safe: serialized from our own typed constants, no user input.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -top-32 left-1/2 h-96 w-[50rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,var(--accent-soft),transparent)] opacity-70"
