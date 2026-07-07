@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createUser, authenticate, AuthError } from "@/lib/auth";
 import { createSession, destroySession } from "@/lib/session";
+import { validatePassword, MIN_PASSWORD_LENGTH } from "@/lib/password";
 import { getClientIp } from "@/lib/request";
 import {
   checkRateLimit,
@@ -33,7 +34,9 @@ function tooManyMessage(retryAfterS: number): string {
 const signupSchema = z.object({
   name: z.string().trim().max(80).optional(),
   email: z.string().email("Enter a valid email address."),
-  password: z.string().min(8, "Password must be at least 8 characters."),
+  password: z
+    .string()
+    .min(MIN_PASSWORD_LENGTH, `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`),
   ref: z.string().trim().max(32).optional(),
 });
 
@@ -60,6 +63,10 @@ export async function signupAction(
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid details." };
+  }
+  const weak = validatePassword(parsed.data.password, parsed.data.email);
+  if (weak) {
+    return { error: weak };
   }
   try {
     const user = await createUser(

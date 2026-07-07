@@ -123,15 +123,15 @@ export function SignupForm({
       <Field
         label="Password"
         htmlFor="signup-password"
-        hint="At least 8 characters."
+        hint="At least 10 characters. Avoid common passwords."
       >
         <Input
           id="signup-password"
           name="password"
           type="password"
           autoComplete="new-password"
-          placeholder="••••••••"
-          minLength={8}
+          placeholder="••••••••••"
+          minLength={10}
           required
         />
       </Field>
