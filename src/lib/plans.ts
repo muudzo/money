@@ -9,6 +9,8 @@ export type BillingInterval = "month" | "year";
 
 export const CREDITS_PER_RENDER = 1;
 export const SIGNUP_BONUS_CREDITS = 3;
+/** Credits granted to BOTH the referrer and the new user on a referred signup. */
+export const REFERRAL_BONUS_CREDITS = 5;
 /** Annual plans bill 10× the monthly rate — i.e. two months free. */
 export const ANNUAL_MONTHS_BILLED = 10;
 

@@ -15,10 +15,12 @@ let db: typeof import("../src/lib/db").db;
 let credits: typeof import("../src/lib/credits");
 
 async function makeUser(): Promise<string> {
+  const rand = Math.random().toString(36).slice(2);
   const user = await db.user.create({
     data: {
-      email: `u_${Math.random().toString(36).slice(2)}@test.dev`,
+      email: `u_${rand}@test.dev`,
       passwordHash: "x",
+      referralCode: `R${rand.toUpperCase().slice(0, 8)}`,
     },
   });
   return user.id;

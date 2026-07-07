@@ -4,6 +4,7 @@ import { db } from "./db";
 
 export type CreditReason =
   | "signup_bonus"
+  | "referral_bonus"
   | "plan_grant"
   | "render_debit"
   | "render_refund"

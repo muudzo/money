@@ -18,10 +18,19 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  // Referral (viral) loop: every user gets a stable share code; new users may
+  // arrive via someone else's code, which credits both parties on signup.
+  referralCode String  @unique
+  referredById String?
+  referredBy   User?   @relation("Referrals", fields: [referredById], references: [id])
+  referrals    User[]  @relation("Referrals")
+
   subscription  Subscription?
   creditEntries CreditLedger[]
   projects      Project[]
   renderJobs    RenderJob[]
+
+  @@index([referredById])
 }
 
 model Subscription {
