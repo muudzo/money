@@ -38,6 +38,9 @@ const schema = z.object({
   STRIPE_PRICE_STARTER: z.string().optional(),
   STRIPE_PRICE_GROWTH: z.string().optional(),
   STRIPE_PRICE_SCALE: z.string().optional(),
+  STRIPE_PRICE_STARTER_YEARLY: z.string().optional(),
+  STRIPE_PRICE_GROWTH_YEARLY: z.string().optional(),
+  STRIPE_PRICE_SCALE_YEARLY: z.string().optional(),
 });
 
 function loadEnv() {
