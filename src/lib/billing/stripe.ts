@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 import { env } from "@/lib/env";
 import { db } from "@/lib/db";
-import { getPlan, type PlanId } from "@/lib/plans";
+import { getPlan, type BillingInterval, type PlanId } from "@/lib/plans";
 import type { BillingProvider, CheckoutResult, PortalResult } from "./index";
 
 /** Lazily-constructed Stripe client (only used when BILLING_PROVIDER=stripe). */
@@ -16,12 +16,22 @@ export class StripeBillingProvider implements BillingProvider {
   readonly name = "stripe";
   private stripe = stripeClient();
 
-  async createCheckout(userId: string, planId: PlanId): Promise<CheckoutResult> {
+  async createCheckout(
+    userId: string,
+    planId: PlanId,
+    interval: BillingInterval,
+  ): Promise<CheckoutResult> {
     const plan = getPlan(planId);
-    if (!plan.stripePriceEnv) {
+    // Pick the price id for the requested interval, falling back to monthly if
+    // an annual price hasn't been configured in Stripe yet.
+    const priceEnv =
+      interval === "year"
+        ? (plan.stripePriceEnvYearly ?? plan.stripePriceEnv)
+        : plan.stripePriceEnv;
+    if (!priceEnv) {
       return { error: "That plan isn't purchasable." };
     }
-    const priceId = env[plan.stripePriceEnv];
+    const priceId = env[priceEnv];
     if (!priceId) {
       return { error: "This plan isn't configured for checkout yet." };
     }
@@ -51,8 +61,8 @@ export class StripeBillingProvider implements BillingProvider {
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
       client_reference_id: userId,
-      metadata: { userId, planId },
-      subscription_data: { metadata: { userId, planId } },
+      metadata: { userId, planId, interval },
+      subscription_data: { metadata: { userId, planId, interval } },
       allow_promotion_codes: true,
       success_url: `${env.APP_URL}/dashboard/billing?success=1`,
       cancel_url: `${env.APP_URL}/pricing?canceled=1`,

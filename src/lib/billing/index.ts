@@ -1,5 +1,5 @@
 import { env } from "@/lib/env";
-import type { PlanId } from "@/lib/plans";
+import type { BillingInterval, PlanId } from "@/lib/plans";
 
 export interface CheckoutResult {
   url?: string;
@@ -15,7 +15,11 @@ export interface PortalResult {
 
 export interface BillingProvider {
   readonly name: string;
-  createCheckout(userId: string, planId: PlanId): Promise<CheckoutResult>;
+  createCheckout(
+    userId: string,
+    planId: PlanId,
+    interval: BillingInterval,
+  ): Promise<CheckoutResult>;
   createPortal(userId: string): Promise<PortalResult>;
 }
 

@@ -1,5 +1,5 @@
 import { env } from "@/lib/env";
-import type { PlanId } from "@/lib/plans";
+import type { BillingInterval, PlanId } from "@/lib/plans";
 import type { BillingProvider, CheckoutResult, PortalResult } from "./index";
 import { activatePlan } from "./grant";
 
@@ -11,10 +11,14 @@ import { activatePlan } from "./grant";
 export class MockBillingProvider implements BillingProvider {
   readonly name = "mock";
 
-  async createCheckout(userId: string, planId: PlanId): Promise<CheckoutResult> {
+  async createCheckout(
+    userId: string,
+    planId: PlanId,
+    interval: BillingInterval,
+  ): Promise<CheckoutResult> {
     await activatePlan(userId, planId, { grantCreditsNow: true });
     return {
-      url: `${env.APP_URL}/dashboard/billing?upgraded=${planId}`,
+      url: `${env.APP_URL}/dashboard/billing?upgraded=${planId}&interval=${interval}`,
       mock: true,
     };
   }
